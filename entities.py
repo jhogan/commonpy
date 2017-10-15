@@ -497,9 +497,10 @@ class entities(object):
         return self.brokenrules.isempty
 
 class entity():
-    def __init__(self):
-        self.onbeforevaluechange = event()
-        self.onaftervaluechange = event()
+    def __init__(self, eventson=True):
+        if eventson:
+            self.onbeforevaluechange = event()
+            self.onaftervaluechange = event()
 
     def _setvalue(self, field, new, prop):
         old = getattr(self, field)
