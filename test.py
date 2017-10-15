@@ -108,6 +108,7 @@ class philosophers(entities):
 class philosopher(entity):
     def __init__(self, name):
         self.name = name
+        super().__init__(eventson=False)
 
 class singer(entity):
     def __init__(self, name):
