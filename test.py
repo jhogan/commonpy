@@ -1777,6 +1777,22 @@ class test_entity(tester):
         test_entities.it_gets_brokenrules."""
         pass
 
+    def it_calls__init__(self):
+        # The __init__ method for the knight class turns events on for the object.
+        # Ensure the event objects are attributes of the knight object
+        entityevents = ['onbeforevaluechange', 'onaftervaluechange'];
+
+        k = knight('Bedevere')
+        for event in entityevents:
+            self.assertTrue(hasattr(k, event))
+
+        # The __init__ method for the philosophers class turns events off for
+        # the object.  Ensure the philosopher object has no event objects
+        k = philosopher('Schopenauer')
+        for event in entityevents:
+            self.assertFalse(hasattr(k, event))
+
+
 class test_table(tester):
     def it_calls__init__(self):
         # Ensure we can instantiate without arguments
