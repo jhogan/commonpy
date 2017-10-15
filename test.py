@@ -129,13 +129,24 @@ def createtable(x, y):
     return tbl
 
 class test_entities(tester):
-    def it_instantiates(self):
+    def it_calls__init__(self):
 
-        # Plain ol' instantiate
-        try:
-            es = entities()
-        except:
-            self.assertFail('Failed instantiating entities')
+        eventsonattr = ['onadd', 'onremove']
+
+        # The default contruction of an entities collection will have event and
+        # index objects.
+        es = entities()
+        for attr in eventsonattr:
+            self.assertTrue(hasattr(es, attr))
+
+        self.assertTrue(es.indexes.ispopulated)
+
+        # Passing in eventson=False causes event and index objects to not be
+        # attributes of the entities object
+        es = entities(eventson=False)
+        for attr in eventsonattr:
+            self.assertFalse(hasattr(es, attr))
+        self.assertTrue(es.indexes.isempty)
 
         # Instantiate with an array of entities
         e1, e2 = entity(), entity()
