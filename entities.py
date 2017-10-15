@@ -26,13 +26,13 @@ from pdb import set_trace; B=set_trace
 from random import randint, sample
 import sys
 class entities(object):
-    def __init__(self, initial=None):
+    def __init__(self, initial=None, eventson=True):
         self._ls = []
 
         # The event and indexes classes are subtypes of entites. Don't add
         # events and indexes to these types in order to avoid infinite
         # recursion.
-        if not isinstance(self, event) and not isinstance(self, indexes):
+        if eventson and not isinstance(self, event) and not isinstance(self, indexes):
 
             # Instantiate events
             self.onadd          =   event()
