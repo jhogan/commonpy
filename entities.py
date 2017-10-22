@@ -28,6 +28,7 @@ import sys
 class entities(object):
     def __init__(self, initial=None, eventson=True):
         self._ls = []
+        self.eventson = eventson
 
         # The event and indexes classes are subtypes of entites. Don't add
         # events and indexes to these types in order to avoid infinite
@@ -167,7 +168,8 @@ class entities(object):
             for rm in rms:
                 if rm is self[i]:
                     del self._ls[i]
-                    self.onremove(self, entityremoveeventargs(rm))
+                    if self.eventson:
+                        self.onremove(self, entityremoveeventargs(rm))
                     break
 
     def __isub__(self, e):
@@ -277,7 +279,8 @@ class entities(object):
 
         try:
             if not isinstance(self, event) and not isinstance(self, indexes):
-                self.onadd(self, entityaddeventargs(t))
+                if self.eventson:
+                    self.onadd(self, entityaddeventargs(t))
         except AttributeError as ex:
             msg = str(ex)
             msg += '\n' + 'Ensure the superclass\'s __init__ is called.'

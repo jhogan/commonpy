@@ -161,6 +161,10 @@ class test_entities(tester):
         es = entities([entity(), entity()])
         es.clear()
         self.assertTrue(es.isempty)
+
+        es = entities([entity(), entity()], eventson=False)
+        es.clear()
+        self.assertTrue(es.isempty)
         
     def it_calls__call__(self):
         """ Test that the indexer (__call__()) returns the the correct entity
