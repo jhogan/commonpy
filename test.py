@@ -27,7 +27,7 @@ from table import *
 import math
 
 class knights(entities):
-    def __init__(self, initial=None):
+    def __init__(self, initial=None, eventson=True):
         self.indexes += index(name='name', 
                         keyfn=lambda k: k.name, 
                         prop='name')
@@ -36,11 +36,11 @@ class knights(entities):
                               keyfn=lambda f: type(f.trait),
                               prop='trait')
 
-        super().__init__(initial);
+        super().__init__(initial, eventson=eventson);
 
     @staticmethod
-    def createthe4():
-        ks = knights()
+    def createthe4(eventson=True):
+        ks = knights(eventson=eventson)
         ks += knight('Lancelot')
         ks += knight('Authur')
         ks += knight('Galahad')
@@ -48,8 +48,8 @@ class knights(entities):
         return ks
 
 class sillyknights(knights):
-    def __init__(self, initial=None):
-        super().__init__(initial);
+    def __init__(self, initial=None, eventson=True):
+        super().__init__(initial, eventson=eventson);
 
         # NOTE This is the proper way to override append: the obj, uniq
         # and r parameters must be given and uniq and r must be defaulted
@@ -162,6 +162,8 @@ class test_entities(tester):
         es.clear()
         self.assertTrue(es.isempty)
 
+    def it_clears_uneventful(self):
+        """ Same as it_clears, but with events turned off. """
         es = entities([entity(), entity()], eventson=False)
         es.clear()
         self.assertTrue(es.isempty)
@@ -169,52 +171,58 @@ class test_entities(tester):
     def it_calls__call__(self):
         """ Test that the indexer (__call__()) returns the the correct entity
         or None if the index is invalid. """
-        e1, e2 = entity(), entity()
 
-        es = entities([e1, e2])
+        # Ensure the eventful and noneventful instantiations work
+        for eventson in (False, True):
+            e1, e2 = entity(), entity()
 
-        self.assertIs(e1, es(0))
-        self.assertIs(e2, es(1))
+            es = entities([e1, e2], eventson=eventson)
 
-        try:
-            e = es(2)
-        except:
-            self.assertFail('__call__ should return None if index is invalid.')
+            self.assertIs(e1, es(0))
+            self.assertIs(e2, es(1))
 
-        self.assertNone(es(2))
+            try:
+                e = es(2)
+            except:
+                self.assertFail('__call__ should return None if index is invalid.')
+
+            self.assertNone(es(2))
 
     def it_iterates(self):
         """ Ensure the iterator (__iter__()) works. """
         e1, e2 = entity(), entity()
 
-        es = entities([e1, e2])
+        for eventson in (False, True):
+            es = entities([e1, e2], eventson=eventson)
 
-        for i, e in enumerate(es):
-            if i == 0:
-                self.assertIs(e1, e)
-            elif i == 1:
-                self.assertIs(e2, e)
-            else:
-                self.assertFail('We should have only interated twice.')
+            for i, e in enumerate(es):
+                if i == 0:
+                    self.assertIs(e1, e)
+                elif i == 1:
+                    self.assertIs(e2, e)
+                else:
+                    self.assertFail('We should have only interated twice.')
 
     def it_gets_random(self):
         """ Ensure es.getrandom() eventually returns a random entity. """
         e1, e2 = entity(), entity()
-        es = entities([e1, e2])
 
-        got1 = got2 = False
-        for _ in range(100):
-            e = es.getrandom()
-            if e is e1:
-                got1 = True
-            elif e is e2:
-                got2 = True
+        for eventson in (False, True):
+            es = entities([e1, e2], eventson=eventson)
 
-            if got1 and got2:
-                break
+            got1 = got2 = False
+            for _ in range(100):
+                e = es.getrandom()
+                if e is e1:
+                    got1 = True
+                elif e is e2:
+                    got2 = True
 
-        if not (got1 and got2):
-            self.assertFail('Failed getting random entities')
+                if got1 and got2:
+                    break
+
+            if not (got1 and got2):
+                self.assertFail('Failed getting random entities')
 
     def it_gets_randomized(self):
         """ Ensure es.getrandomized() returns a randomized version of itself.
@@ -225,104 +233,105 @@ class test_entities(tester):
         class pantheon(entities):
             pass
 
-        e1, e2 = entity(), entity()
-        gods = pantheon([e1, e2])
+        for eventson in (False, True):
+            e1, e2 = entity(), entity()
+            gods = pantheon([e1, e2], eventson=True)
 
-        initord = randord = False
-        for _ in range(100):
-            rgods = gods.getrandomized()
+            initord = randord = False
+            for _ in range(100):
+                rgods = gods.getrandomized()
 
-            self.assertEq(pantheon, type(rgods))
-            self.assertEq(gods.count, rgods.count)
+                self.assertEq(pantheon, type(rgods))
+                self.assertEq(gods.count, rgods.count)
 
-            if gods.first == rgods.first and gods.second == rgods.second:
-                initord = True
-            elif gods.first == rgods.second and gods.second == rgods.first:
-                randord = True
+                if gods.first == rgods.first and gods.second == rgods.second:
+                    initord = True
+                elif gods.first == rgods.second and gods.second == rgods.first:
+                    randord = True
 
-            if initord and randord:
-                break
+                if initord and randord:
+                    break
 
-        if not (initord and randord):
-            self.assertFail('Failed getting random entities')
+            if not (initord and randord):
+                self.assertFail('Failed getting random entities')
 
     def it_calls_where(self):
         """ Where queries the entities collection."""
-
 
         n = philosopher('neitzsche')
         s = philosopher('schopenhaurer')
         sj = singer('salena jones')
         bb = singer('burt bacharach')
 
-        ps1 = philosophers([n, s, sj, bb])
+        for eventson in (False, True):
+            ps1 = philosophers([n, s, sj, bb], eventson=eventson)
 
-        # Results of query should return the one entry in 'ps1' where
-        # the type is 'singer' (not 'philosopher')
-        ps2 = ps1.where(singer)
-        self.assertEq(2, ps2.count)
-        self.assertEq(philosophers, type(ps2))
-        self.assertIs(sj, ps2.first)
-        self.assertIs(bb, ps2.second)
-
-        # Test where() using a callable.  Get all the "philosophers" who have
-        # 's' in their names. 
-        for i in range(2):
-            if i == 0:
-                # On the first go, use a lambda
-                fn = lambda e: 's' in e.name
-            else:
-                # On the second go, use a function. We just want to make sure 
-                # where() doesn't discriminate based on callabel type
-                def fn(e):
-                    return 's' in e.name
-            ps2 = ps1.where(fn)
-            self.assertEq(3, ps2.count)
+            # Results of query should return the one entry in 'ps1' where
+            # the type is 'singer' (not 'philosopher')
+            ps2 = ps1.where(singer)
+            self.assertEq(2, ps2.count)
             self.assertEq(philosophers, type(ps2))
-            self.assertEq(philosopher, type(ps2.first))
-            self.assertEq(philosopher, type(ps2.second))
-            self.assertEq(philosopher, type(ps2.second))
-            self.assertIs(n, ps2.first)
-            self.assertIs(s, ps2.second)
-            self.assertIs(sj, ps2.third)
+            self.assertIs(sj, ps2.first)
+            self.assertIs(bb, ps2.second)
+
+            # Test where() using a callable.  Get all the "philosophers" who have
+            # 's' in their names. 
+            for i in range(2):
+                if i == 0:
+                    # On the first go, use a lambda
+                    fn = lambda e: 's' in e.name
+                else:
+                    # On the second go, use a function. We just want to make sure 
+                    # where() doesn't discriminate based on callabel type
+                    def fn(e):
+                        return 's' in e.name
+                ps2 = ps1.where(fn)
+                self.assertEq(3, ps2.count)
+                self.assertEq(philosophers, type(ps2))
+                self.assertEq(philosopher, type(ps2.first))
+                self.assertEq(philosopher, type(ps2.second))
+                self.assertEq(philosopher, type(ps2.second))
+                self.assertIs(n, ps2.first)
+                self.assertIs(s, ps2.second)
+                self.assertIs(sj, ps2.third)
 
     def it_calls_sort(self):
         """ The entities.sort() method sorts the collection in-place -
         much like the standard Python list.sort() does."""
 
-        # Create a collection of knights
-        ks = knights()
-        ks += knight('Lancelot')
-        ks += knight('Authur')
-        ks += knight('Galahad')
-        ks += knight('Bedevere')
-        cnt = ks.count
+        for eventson in (False, True):
+            # Create a collection of knights
+            ks = knights(eventson=eventson)
+            ks += knight('Lancelot')
+            ks += knight('Authur')
+            ks += knight('Galahad')
+            ks += knight('Bedevere')
+            cnt = ks.count
 
+            # Sort them by name
+            ks.sort(key=lambda k: k.name)
 
-        # Sort them by name
-        ks.sort(key=lambda k: k.name)
+            # Test the sort
 
-        # Test the sort
+            # Ensure count hasn't changed
+            self.assertEq(cnt, ks.count)
 
-        # Ensure count hasn't changed
-        self.assertEq(cnt, ks.count)
+            # Ensure sort is alphabetic
+            self.assertEq('Authur',    ks.first.name)
+            self.assertEq('Bedevere',  ks.second.name)
+            self.assertEq('Galahad',   ks.third.name)
+            self.assertEq('Lancelot',  ks.fourth.name)
 
-        # Ensure sort is alphabetic
-        self.assertEq('Authur',    ks.first.name)
-        self.assertEq('Bedevere',  ks.second.name)
-        self.assertEq('Galahad',   ks.third.name)
-        self.assertEq('Lancelot',  ks.fourth.name)
+            Light = 12000000 # miles per minute
+            cs  = constants()
+            cs += constant(Light)
+            cs += constant(math.pi)
+            cs += constant(math.e)
 
-        Light = 12000000 # miles per minute
-        cs = constants()
-        cs += constant(Light)
-        cs += constant(math.pi)
-        cs += constant(math.e)
-
-        cs.sort(key=lambda c: c.value)
-        self.assertEq(math.e,    cs.first.value)
-        self.assertEq(math.pi,  cs.second.value)
-        self.assertEq(Light,    cs.third.value)
+            cs.sort(key=lambda c: c.value)
+            self.assertEq(math.e,   cs.first.value)
+            self.assertEq(math.pi,  cs.second.value)
+            self.assertEq(Light,    cs.third.value)
 
     def it_calls_sorted(self):
         """ The entities.sorted() method is like entities.sort() except
@@ -332,72 +341,74 @@ class test_entities(tester):
         Light = 12000000 # miles per minute
 
         # Create a collection of knights
-        ks = knights()
-        ks += knight('Lancelot')
-        ks += knight('Authur')
-        ks += knight('Galahad')
-        ks += knight('Bedevere')
+        for eventson in (False, True):
+            ks = knights(eventson=eventson)
+            ks += knight('Lancelot')
+            ks += knight('Authur')
+            ks += knight('Galahad')
+            ks += knight('Bedevere')
 
-        # Create a sorted version
-        ks1 = ks.sorted(key=lambda k: k.name)
+            # Create a sorted version
+            ks1 = ks.sorted(key=lambda k: k.name)
 
-        # Test the sort
+            # Test the sort
 
-        # Ensure count hasn't changed
-        self.assertEq(ks.count, ks1.count)
-        self.assertIs(knights, type(ks1))
+            # Ensure count hasn't changed
+            self.assertEq(ks.count, ks1.count)
+            self.assertIs(knights, type(ks1))
 
-        # Ensure original was not sorted.
-        self.assertEq('Lancelot',  ks.first.name)
-        self.assertEq('Authur',    ks.second.name)
-        self.assertEq('Galahad',   ks.third.name)
-        self.assertEq('Bedevere',  ks.fourth.name)
+            # Ensure original was not sorted.
+            self.assertEq('Lancelot',  ks.first.name)
+            self.assertEq('Authur',    ks.second.name)
+            self.assertEq('Galahad',   ks.third.name)
+            self.assertEq('Bedevere',  ks.fourth.name)
 
-        # Ensure sort is alphabetic
-        self.assertEq('Authur',    ks1.first.name)
-        self.assertEq('Bedevere',  ks1.second.name)
-        self.assertEq('Galahad',   ks1.third.name)
-        self.assertEq('Lancelot',  ks1.fourth.name)
+            # Ensure sort is alphabetic
+            self.assertEq('Authur',    ks1.first.name)
+            self.assertEq('Bedevere',  ks1.second.name)
+            self.assertEq('Galahad',   ks1.third.name)
+            self.assertEq('Lancelot',  ks1.fourth.name)
 
-        # Numeric sort 
+            # Numeric sort 
 
-        # Create numeric constant collection
-        cs = constants()
-        cs += constant(Light)
-        cs += constant(math.pi)
-        cs += constant(math.e)
+            # Create numeric constant collection
+            cs = constants()
+            cs += constant(Light)
+            cs += constant(math.pi)
+            cs += constant(math.e)
 
-        cs1 = cs.sorted(key=lambda c: c.value)
+            cs1 = cs.sorted(key=lambda c: c.value)
 
-        # Ensure original was not sorted
-        self.assertEq(Light,    cs.first.value)
-        self.assertEq(math.pi,  cs.second.value)
-        self.assertEq(math.e,   cs.third.value)
+            # Ensure original was not sorted
+            self.assertEq(Light,    cs.first.value)
+            self.assertEq(math.pi,  cs.second.value)
+            self.assertEq(math.e,   cs.third.value)
 
-        # Ensure cs1 is sorted numerically
-        self.assertEq(math.e,   cs1.first.value)
-        self.assertEq(math.pi,  cs1.second.value)
-        self.assertEq(Light,    cs1.third.value)
+            # Ensure cs1 is sorted numerically
+            self.assertEq(math.e,   cs1.first.value)
+            self.assertEq(math.pi,  cs1.second.value)
+            self.assertEq(Light,    cs1.third.value)
 
     def it_calls_tail(self):
         """ Tail returns an entities collection containing the last 'number'
         of entities in the collection."""
 
         # Create some knights
-        ks = knights()
-        ks += knight('Lancelot')
-        ks += knight('Authur')
-        ks += knight('Galahad')
-        ks += knight('Bedevere')
+        for eventson in (False, True):
+            ks = knights(eventson=eventson)
+            ks += knight('Lancelot')
+            ks += knight('Authur')
+            ks += knight('Galahad')
+            ks += knight('Bedevere')
 
-        # Call tail() with a number for 0 to 4
-        for i in range(ks.count + 1):
-            t = ks.tail(i)
-            self.assertEq(i, t.count)
-            self.assertEq(knights, type(t))
-            # Ensure the elements of the tail are as expected
-            for j in range(1, i + 1):
-                self.assertEq(ks[-j], t[-j])
+            # Call tail() with a number for 0 to 4
+            for i in range(ks.count + 1):
+                t = ks.tail(i)
+                self.assertEq(i, t.count)
+                self.assertEq(knights, type(t))
+                # Ensure the elements of the tail are as expected
+                for j in range(1, i + 1):
+                    self.assertEq(ks[-j], t[-j])
 
     def it_calls_remove(self):
         """ The entities.remove method removesd entity objects from itself.
@@ -405,271 +416,287 @@ class test_entities(tester):
         objects need to be removed."""
         
         # Create some knights
-        ks = knights.createthe4()
+        for eventson in (False, True):
+            ks = knights.createthe4(eventson=eventson)
 
-        ## Remove Galahad by index ##
-        ks.remove(2) 
-        self.assertCount(3, ks)
-        self.assertCount(0, ks.where(lambda k: k.name == 'Galahad'))
+            ## Remove Galahad by index ##
+            ks.remove(2) 
+            self.assertCount(3, ks)
+            self.assertCount(0, ks.where(lambda k: k.name == 'Galahad'))
 
-        # Recreate the four knights
-        ks = knights.createthe4()
+            # Recreate the four knights
+            ks = knights.createthe4(eventson=eventson)
 
-        ## Remove the second one by object identity ##
-        nd = ks.second
-        ks.remove(nd)
-        self.assertCount(3, ks)
-        self.assertFalse(ks.has(nd)) # Ensure second knight is not in ks
+            ## Remove the second one by object identity ##
+            nd = ks.second
+            ks.remove(nd)
+            self.assertCount(3, ks)
+            self.assertFalse(ks.has(nd)) # Ensure second knight is not in ks
 
-        ## Remove by entities collection ##
+            ## Remove by entities collection ##
 
-        # Get a knights collection containing first 2 knights from ks
-        ks = knights.createthe4()
-        ks1 = knights(ks[:2])
+            # Get a knights collection containing first 2 knights from ks
+            ks = knights.createthe4(eventson=eventson)
+            ks1 = knights(ks[:2])
 
-        # Pass knights collectios in to remove() to remove them from ks
-        ks.remove(ks1)
+            # Pass knights collectios in to remove() to remove them from ks
+            ks.remove(ks1)
 
-        # Ensure the first 2 where removed
-        self.assertCount(2, ks)
-        self.assertFalse(ks.has(ks1.first))
-        self.assertFalse(ks.has(ks1.second))
+            # Ensure the first 2 where removed
+            self.assertCount(2, ks)
+            self.assertFalse(ks.has(ks1.first))
+            self.assertFalse(ks.has(ks1.second))
 
-        ## Remove using a callable##
-        ks = knights.createthe4()
+            ## Remove using a callable##
+            ks = knights.createthe4(eventson=eventson)
 
-        # Get a reference to Bedevere
-        k = ks.last
+            # Get a reference to Bedevere
+            k = ks.last
 
-        # Remove Bedevere
-        ks.remove(lambda k: k.name == 'Bedevere')
+            # Remove Bedevere
+            ks.remove(lambda k: k.name == 'Bedevere')
 
-        self.assertCount(3, ks)
-        self.assertFalse(ks.has(k))
+            self.assertCount(3, ks)
+            self.assertFalse(ks.has(k))
 
-        ## Remove a duplicate
-        ni = knight('knight who says ni')
+            ## Remove a duplicate
+            # TODO We should be testing eventson argument here
+            # ni = knight('knight who says ni', eventson=eventson)
+            ni = knight('knight who says ni')
 
-        # Add ni twice
-        ks += ni
-        ks += ni
+            # Add ni twice
+            ks += ni
+            ks += ni
 
-        # Now the count is 5
-        self.assertCount(5, ks)
+            # Now the count is 5
+            self.assertCount(5, ks)
 
-        # If we remove ni once, we end up removing both instance of ni. This
-        # is counter-intuitive, and may not be Right, but it seems the most 
-        # logical at the moment.
-        ks -= ni
-        self.assertCount(3, ks)
-        self.assertFalse(ks.has(ni))
+            # If we remove ni once, we end up removing both instance of ni. This
+            # is counter-intuitive, and may not be Right, but it seems the most 
+            # logical at the moment.
+            ks -= ni
+            self.assertCount(3, ks)
+            self.assertFalse(ks.has(ni))
 
     def it_calls__isub__(self):
         """ entities.__isub__() is essentially a wrapper around
         entities.removes. The test here will be similar to it_calls_remove.
         """
 
-        ## Remove Galahad by index ##
-        
-        # API NOTE This works simply because __isub__ is a wrapper for
-        # remove(). However, it seems so semantically insensable that a
-        # ValueError probably should be thrown here.
+        for eventson in (False, True):
+            ## Remove Galahad by index ##
+            
+            # API NOTE This works simply because __isub__ is a wrapper for
+            # remove(). However, it seems so semantically insensable that a
+            # ValueError probably should be thrown here.
 
-        # Create some knights 
-        ks = knights.createthe4()
-        ks -= 2
-        self.assertCount(3, ks)
-        self.assertCount(0, ks.where(lambda k: k.name == 'Galahad'))
+            # Create some knights 
+            ks = knights.createthe4(eventson=eventson)
+            ks -= 2
+            self.assertCount(3, ks)
+            self.assertCount(0, ks.where(lambda k: k.name == 'Galahad'))
 
-        # Create some knights
-        ks = knights.createthe4()
+            # Create some knights
+            ks = knights.createthe4(eventson=eventson)
 
-        ## Remove Galahad by index ##
-        galahad = ks.where(lambda k: k.name == 'Galahad').first
+            ## Remove Galahad by index ##
+            galahad = ks.where(lambda k: k.name == 'Galahad').first
 
-        ks -= galahad
+            ks -= galahad
 
-        self.assertCount(3, ks)
-        self.assertCount(0, ks.where(lambda k: k.name == 'Galahad'))
+            self.assertCount(3, ks)
+            self.assertCount(0, ks.where(lambda k: k.name == 'Galahad'))
 
-        ## Remove by entities collection ##
+            ## Remove by entities collection ##
 
-        # Get a knights collection containing first 2 knights from ks
-        ks = knights.createthe4()
-        ks1 = knights(ks[:2])
+            # Get a knights collection containing first 2 knights from ks
+            ks = knights.createthe4(eventson=eventson)
+            ks1 = knights(ks[:2])
 
-        # Pass knights collectios in to remove() to remove them from ks
-        ks -= ks1
+            # Pass knights collectios in to remove() to remove them from ks
+            ks -= ks1
 
-        # Ensure the first 2 where removed
-        self.assertCount(2, ks)
-        self.assertFalse(ks.has(ks1.first))
-        self.assertFalse(ks.has(ks1.second))
+            # Ensure the first 2 where removed
+            self.assertCount(2, ks)
+            self.assertFalse(ks.has(ks1.first))
+            self.assertFalse(ks.has(ks1.second))
 
-        ## Remove using a callable ##
-        ks = knights.createthe4()
+            ## Remove using a callable ##
+            ks = knights.createthe4(eventson=eventson)
 
-        # Get a reference to Bedevere
-        k = ks.last
+            # Get a reference to Bedevere
+            k = ks.last
 
-        # Remove Bedevere
+            # Remove Bedevere
 
-        # API NOTE This should probably raise a ValueError as well
-        ks -= lambda k: k.name == 'Bedevere'
+            # API NOTE This should probably raise a ValueError as well
+            ks -= lambda k: k.name == 'Bedevere'
 
-        self.assertCount(3, ks)
-        self.assertFalse(ks.has(k))
+            self.assertCount(3, ks)
+            self.assertFalse(ks.has(k))
 
     def it_calls_reversed(self):
         """ The entities.reversed() method returns an entities collection
         containing the same entity objects but in reversed order. """
 
-        ks = knights.createthe4()
-        ks1 = ks.reversed()
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ks1 = ks.reversed()
 
-        self.assertCount(ks1.count,  ks)
+            self.assertCount(ks1.count,  ks)
 
-        self.assertIs(knights,       type(ks1))
+            self.assertIs(knights,       type(ks1))
 
-        self.assertIs(ks1.first,     ks.last)
-        self.assertIs(ks1.last,      ks.first)
-        self.assertIs(ks1.second,    ks.third)
-        self.assertIs(ks1.third,     ks.second)
+            self.assertIs(ks1.first,     ks.last)
+            self.assertIs(ks1.last,      ks.first)
+            self.assertIs(ks1.second,    ks.third)
+            self.assertIs(ks1.third,     ks.second)
 
     def it_calls_reverse(self):
         """ The entities.reverse() method reverses the order of the entity 
         objects within the entities collection. """
 
-        ks = knights.createthe4()
-        rst, nd, rd, th = ks[:]
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            rst, nd, rd, th = ks[:]
 
-        ks.reverse()
+            ks.reverse()
 
-        self.assertCount(4, ks)
+            self.assertCount(4, ks)
 
-        self.assertIs(rst,  ks.last)
-        self.assertIs(nd,   ks.third)
-        self.assertIs(rd,   ks.second)
-        self.assertIs(th,   ks.first)
+            self.assertIs(rst,  ks.last)
+            self.assertIs(nd,   ks.third)
+            self.assertIs(rd,   ks.second)
+            self.assertIs(th,   ks.first)
 
     def it_gets_ubound(self):
         """ The upper bound is the highest number that can be given to the
         indexer."""
         
-        ks = knights.createthe4()
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
 
-        # Ensure that ubound is the number of elements minus one.
-        self.assertEq(3, ks.ubound)
+            # Ensure that ubound is the number of elements minus one.
+            self.assertEq(3, ks.ubound)
 
-        # If the collection is empty, a ubound can't exist so set it should be
-        # None.
-        self.assertNone(entities().ubound)
+            # If the collection is empty, a ubound can't exist so set it should be
+            # None.
+            self.assertNone(entities().ubound)
 
     def it_calls_insert(self):
         """ Normally we append to the end of collections. The insert() method
         allows us to insert entity objects into arbitrary areas of the 
         collection. """
 
-        ks = knights.createthe4()
-        ni = knight('knight who says ni')
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ni = knight('knight who says ni')
 
-        ks.insert(2, ni)
+            ks.insert(2, ni)
 
-        self.assertEq(5, ks.count)
-        self.assertIs(ks.third, ni)
+            self.assertEq(5, ks.count)
+            self.assertIs(ks.third, ni)
 
     def it_calls_insertbefore(self):
         """ Inserts an entity before an index position. """
 
-        ks = knights.createthe4()
-        ni = knight('knight who says ni')
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ni = knight('knight who says ni')
 
-        ks.insertbefore(2, ni)
+            ks.insertbefore(2, ni)
 
-        self.assertEq(5, ks.count)
-        self.assertIs(ks.third, ni)
+            self.assertEq(5, ks.count)
+            self.assertIs(ks.third, ni)
 
     def it_calls_insertafter(self):
         """ Inserts an entity after an index position. """
 
-        ks = knights.createthe4()
-        ni = knight('knight who says ni')
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ni = knight('knight who says ni')
 
-        ks.insertafter(2, ni)
+            ks.insertafter(2, ni)
 
-        self.assertEq(5, ks.count)
-        self.assertIs(ks.fourth, ni)
+            self.assertEq(5, ks.count)
+            self.assertIs(ks.fourth, ni)
 
     def it_calls_shift(self):
         """ Calling shift removes the first entity object from the collection
         and returns it to the caller."""
 
-        ks = knights.createthe4()
-        rst = ks.shift()
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            rst = ks.shift()
 
-        self.assertEq(3, ks.count)
-        self.assertFalse(ks.has(rst))
+            self.assertEq(3, ks.count)
+            self.assertFalse(ks.has(rst))
 
-        # Ensure empty collection shift None
-        self.assertNone(entities().shift())
+            # Ensure empty collection shift None
+            self.assertNone(entities().shift())
 
     def it_calls_unshift(self):
         """ Calling unshift() inserts an elment into the collection making it
         the first element."""
 
-        ks = knights.createthe4()
-        ni = knight('knight who says ni')
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ni = knight('knight who says ni')
 
-        ks.unshift(ni)
+            ks.unshift(ni)
 
-        self.assertEq(5, ks.count)
-        self.assertIs(ks.first, ni)
+            self.assertEq(5, ks.count)
+            self.assertIs(ks.first, ni)
 
     def it_calls_pop(self):
         """ Calling pop() removes and returns the last element in the 
         collection."""
 
-        ks = knights.createthe4()
-        last = ks.pop()
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            last = ks.pop()
 
-        self.assertEq(3, ks.count)
-        self.assertFalse(ks.has(last))
+            self.assertEq(3, ks.count)
+            self.assertFalse(ks.has(last))
 
-        # Ensure empty collection pops None
-        self.assertNone(entities().pop())
+            # Ensure empty collection pops None
+            self.assertNone(entities().pop())
 
     def it_calls_push(self):
         """ Calling push() causes the argument to be added to the end of
         the collection. """
-        ks = knights.createthe4()
-        ni = knight('knight who says ni')
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ni = knight('knight who says ni')
 
-        ks.push(ni)
+            ks.push(ni)
 
-        self.assertEq(5, ks.count)
-        self.assertIs(ni, ks.last)
+            self.assertEq(5, ks.count)
+            self.assertIs(ni, ks.last)
 
     def it_calls_has(self):
         """ The has() method determines if the argument is in the collection
         using object identity (is) as opposed to object equality (==). """
 
-        ks = knights.createthe4()
-        for k in ks:
-            self.assertTrue(ks.has(k))
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            for k in ks:
+                self.assertTrue(ks.has(k))
 
-        ni = knight('knight who says ni')
-        self.assertFalse(ks.has(ni))
-        self.assertTrue(ks.hasnt(ni))
+            ni = knight('knight who says ni')
+            self.assertFalse(ks.has(ni))
+            self.assertTrue(ks.hasnt(ni))
 
     def it_calls__lshift__(self):
         """ The lshift operator (<<) is a wrapper around unshift. """
 
-        ks = knights.createthe4()
-        ni = knight('knight who says ni')
-        ks << ni
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ni = knight('knight who says ni')
+            ks << ni
 
-        self.assertEq(5, ks.count)
-        self.assertIs(ks.first, ni)
+            self.assertEq(5, ks.count)
+            self.assertIs(ks.first, ni)
 
     def it_calls_append(self):
         """ The append() method adds entity objects to the end of the
@@ -679,171 +706,184 @@ class test_entities(tester):
         were added."""
 
         ## Test appending one entity ##
-        ks = knights.createthe4()
-        ni = knight('knight who says ni')
-        ks1 = ks.append(ni)
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ni = knight('knight who says ni')
+            ks1 = ks.append(ni)
 
-        self.assertEq(5, ks.count)
-        self.assertEq(1, ks1.count)
-        self.assertIs(ks.last, ni)
-        self.assertIs(ks1.first, ni)
-        self.assertEq(entities, type(ks1))
+            self.assertEq(5, ks.count)
+            self.assertEq(1, ks1.count)
+            self.assertIs(ks.last, ni)
+            self.assertIs(ks1.first, ni)
+            self.assertEq(entities, type(ks1))
 
         ## Test appending one unique entity with the uniq flag set. We
         ## should get a successful appending like above since the entity
         ## is unique.
 
-        ks = knights.createthe4()
-        ni = knight('knight who says ni')
-        ks1 = ks.append(ni, uniq=True)
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ni = knight('knight who says ni')
+            ks1 = ks.append(ni, uniq=True)
 
-        self.assertEq(5, ks.count)
-        self.assertEq(1, ks1.count)
-        self.assertIs(ks.last, ni)
-        self.assertIs(ks1.first, ni)
-        self.assertEq(entities, type(ks1))
+            self.assertEq(5, ks.count)
+            self.assertEq(1, ks1.count)
+            self.assertIs(ks.last, ni)
+            self.assertIs(ks1.first, ni)
+            self.assertEq(entities, type(ks1))
 
         ## Test appending one non-unique entity with the uniq flag set. We
         ## should get a successful appending like above since the entity
         ## is unique.
 
-        ks = knights.createthe4()
-        ks1 = ks.append(ks.first, uniq=True)
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ks1 = ks.append(ks.first, uniq=True)
 
-        self.assertEq(4, ks.count)
-        self.assertTrue(ks1.isempty)
-        self.assertEq(entities, type(ks1))
+            self.assertEq(4, ks.count)
+            self.assertTrue(ks1.isempty)
+            self.assertEq(entities, type(ks1))
 
         ## Test appending an entities collection to an entities collection.
-        ks = knights.createthe4()
-        nis = knights()
-        nis += knight('knight who says ni 1')
-        nis += knight('knight who says ni 2')
+        for eventson1 in (True, False):
+            for eventson2 in (True, False):
+                ks = knights.createthe4(eventson=eventson1)
+                nis = knights(eventson=eventson2)
+                nis += knight('knight who says ni 1')
+                nis += knight('knight who says ni 2')
 
-        ks1 = ks.append(nis)
+                ks1 = ks.append(nis)
 
-        self.assertEq(6,           ks.count)
-        self.assertEq(2,           ks1.count)
-        self.assertIs(nis.first,   ks.penultimate)
-        self.assertIs(nis.second,  ks.last)
-        self.assertIs(nis.first,   ks1.first)
-        self.assertIs(nis.second,  ks1.second)
-        self.assertEq(entities,    type(ks1))
+                self.assertEq(6,           ks.count)
+                self.assertEq(2,           ks1.count)
+                self.assertIs(nis.first,   ks.penultimate)
+                self.assertIs(nis.second,  ks.last)
+                self.assertIs(nis.first,   ks1.first)
+                self.assertIs(nis.second,  ks1.second)
+                self.assertEq(entities,    type(ks1))
 
         # Test appending an entities collection to an entities collection
         # where one of the entities being appended is not unique, though 
         # the uniq flag is is not changed from its default value of False.
 
-        ks = knights.createthe4()
-        nis = knights()
-        nis += knight('knight who says ni 1')
-        nis += ks.first # The non-unique entity
+        for eventson1 in (True, False):
+            for eventson2 in (True, False):
+                ks = knights.createthe4(eventson=eventson1)
+                nis = knights(eventson=eventson2)
+                nis += knight('knight who says ni 1')
+                nis += ks.first # The non-unique entity
 
-        ks1 = ks.append(nis)
+                ks1 = ks.append(nis)
 
-        self.assertEq(6,           ks.count)
-        self.assertEq(2,           ks1.count)
-        self.assertIs(nis.first,   ks.penultimate)
-        self.assertIs(nis.second,  ks.last)
-        self.assertIs(nis.first,   ks1.first)
-        self.assertIs(nis.second,  ks1.second)
-        self.assertEq(entities,    type(ks1))
+                self.assertEq(6,           ks.count)
+                self.assertEq(2,           ks1.count)
+                self.assertIs(nis.first,   ks.penultimate)
+                self.assertIs(nis.second,  ks.last)
+                self.assertIs(nis.first,   ks1.first)
+                self.assertIs(nis.second,  ks1.second)
+                self.assertEq(entities,    type(ks1))
 
         # Test appending an entities collection to an entities collection
         # where one of the entities being appended is not unique.
 
-        ks = knights.createthe4()
-        nis = knights()
-        nis += knight('knight who says ni 1')
-        nis += ks.first # The non-unique entity
+        for eventson1 in (True, False):
+            for eventson2 in (True, False):
+                ks = knights.createthe4(eventson=eventson1)
+                nis = knights(eventson=eventson2)
+                nis += knight('knight who says ni 1')
+                nis += ks.first # The non-unique entity
 
-        ks1 = ks.append(nis, uniq=True)
+                ks1 = ks.append(nis, uniq=True)
 
-        self.assertEq(5,           ks.count)
-        self.assertEq(1,           ks1.count)
-        self.assertIs(nis.first,   ks.last)
-        self.assertIs(nis.first,   ks1.first)
-        self.assertEq(entities,    type(ks1))
-        self.assertFalse(ks1.has(nis.second))
+                self.assertEq(5,           ks.count)
+                self.assertEq(1,           ks1.count)
+                self.assertIs(nis.first,   ks.last)
+                self.assertIs(nis.first,   ks1.first)
+                self.assertEq(entities,    type(ks1))
+                self.assertFalse(ks1.has(nis.second))
 
         # Test appending an entities collection to an entities collection
         # where both of the entities being appended are not unique.
 
-        ks = knights.createthe4()
-        nis = knights()
-        nis += ks.first
-        nis += ks.second # The non-unique entity
+        for eventson1 in (True, False):
+            for eventson2 in (True, False):
+                ks = knights.createthe4(eventson=eventson1)
+                nis = knights(eventson=eventson2)
+                nis += ks.first
+                nis += ks.second # The non-unique entity
 
-        ks1 = ks.append(nis, uniq=True)
+                ks1 = ks.append(nis, uniq=True)
 
-        self.assertEq(4,           ks.count)
-        self.assertEq(0,           ks1.count)
-        self.assertEq(entities,    type(ks1))
-        self.assertFalse(ks1.has(nis.first))
-        self.assertFalse(ks1.has(nis.second))
+                self.assertEq(4,           ks.count)
+                self.assertEq(0,           ks1.count)
+                self.assertEq(entities,    type(ks1))
+                self.assertFalse(ks1.has(nis.first))
+                self.assertFalse(ks1.has(nis.second))
 
         ## Ensure we get a ValueError if we append something that isn't
         ## an entity or entities type
 
-        ks = knights.createthe4()
-        try:
-            ks.append(1)
-            self.assertFail('Append accepted invalid type')
-        except Exception as ex:
-            self.assertEq(ValueError, type(ex))
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            try:
+                ks.append(1)
+                self.assertFail('Append accepted invalid type')
+            except Exception as ex:
+                self.assertEq(ValueError, type(ex))
 
     def it_subclasses_append(self):
 
         # Append one knight
-        sks = sillyknights()
-        fk = knight('french knight')
-        sks += fk
+        for eventson in (False, True):
+            sks = sillyknights(eventson=eventson)
+            fk = knight('french knight')
+            sks += fk
 
-        self.assertTrue(sks.hasone)
-        self.assertIs(sks.first, fk)
+            self.assertTrue(sks.hasone)
+            self.assertIs(sks.first, fk)
 
-        # Append a collection of knightns
-        # Note: The overridden append() must accept the 'r' parameter and 
-        # default it to None for this to work.
-        bk = knight('black knight')
-        ks = bk + fk
+            # Append a collection of knightns
+            # NOTE: The overridden append() must accept the 'r' parameter and 
+            # default it to None for this to work.
+            bk = knight('black knight')
+            ks = bk + fk
 
-        sks += ks
+            sks += ks
 
-        self.assertEq(3, sks.count)
-        for i, k in enumerate([fk, bk, fk]):
-            self.assertIs(sks[i], k)
+            self.assertEq(3, sks.count)
+            for i, k in enumerate([fk, bk, fk]):
+                self.assertIs(sks[i], k)
 
-        # Append a unique knight insisting in be unique
-        ni = knight('knight who says ni')
-        sks &= ni
-        self.assertEq(4, sks.count)
-        for i, k in enumerate([fk, bk, fk, ni]):
-            self.assertIs(sks[i], k)
+            # Append a unique knight insisting in be unique
+            ni = knight('knight who says ni')
+            sks &= ni
+            self.assertEq(4, sks.count)
+            for i, k in enumerate([fk, bk, fk, ni]):
+                self.assertIs(sks[i], k)
 
-        # Append a non-unique knight insisting in be unique
-        sks &= ni
-        self.assertEq(4, sks.count)
-        for i, k in enumerate([fk, bk, fk, ni]):
-            self.assertIs(sks[i], k)
+            # Append a non-unique knight insisting in be unique
+            sks &= ni
+            self.assertEq(4, sks.count)
+            for i, k in enumerate([fk, bk, fk, ni]):
+                self.assertIs(sks[i], k)
 
-        # Append a non-unique knight insisting in be unique using the append
-        # method rather than the &= operator in order to obtain the results
-        res = sks.append(ni, uniq=True)
-        self.assertTrue(res.isempty)
-        self.assertEq(4, sks.count)
-        for i, k in enumerate([fk, bk, fk, ni]):
-            self.assertIs(sks[i], k)
+            # Append a non-unique knight insisting in be unique using the append
+            # method rather than the &= operator in order to obtain the results
+            res = sks.append(ni, uniq=True)
+            self.assertTrue(res.isempty)
+            self.assertEq(4, sks.count)
+            for i, k in enumerate([fk, bk, fk, ni]):
+                self.assertIs(sks[i], k)
 
-        # Append a non-unique collection of knights insisting they be unique
-        # using the append method rather than the &= operator in order to
-        # obtain the results
-        ks = ni + knight('knight who says ni2')
-        res = sks.append(ks, uniq=True)
-        self.assertTrue(res.hasone)
-        self.assertEq(5, sks.count)
-        for i, k in enumerate([fk, bk, fk, ni, ks.second]):
-            self.assertIs(sks[i], k)
+            # Append a non-unique collection of knights insisting they be unique
+            # using the append method rather than the &= operator in order to
+            # obtain the results
+            ks = ni + knight('knight who says ni2')
+            res = sks.append(ks, uniq=True)
+            self.assertTrue(res.hasone)
+            self.assertEq(5, sks.count)
+            for i, k in enumerate([fk, bk, fk, ni, ks.second]):
+                self.assertIs(sks[i], k)
 
         # Create a new collection based on the old one by instantiating with
         # the old collection as an argument. 
