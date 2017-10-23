@@ -1803,6 +1803,18 @@ class test_entity(tester):
         for event in entityevents:
             self.assertFalse(hasattr(k, event))
 
+    def it_raises_onbeforevaluechange(self):
+        snare = entities()
+        def local_onbeforevaluechange(src, eargs):
+            nonlocal snare
+            snare += eargs
+
+        ks = knights.createthe4()
+        k = ks.first
+        k.onbeforevaluechange += local_onbeforevaluechange
+        k.trait = 'bravery'
+
+        self.assertTrue(snare.count == 1)
 
 class test_table(tester):
     def it_calls__init__(self):
