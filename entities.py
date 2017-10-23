@@ -159,7 +159,8 @@ class entities(object):
         elif type(e) == int:
             rm = self._ls[e]
             del self._ls[e]
-            self.onremove(self, entityremoveeventargs(rm))
+            if self.eventson:
+                self.onremove(self, entityremoveeventargs(rm))
             return
         else:
             rms = [e]
@@ -189,7 +190,9 @@ class entities(object):
         else:
             e = self[ix]
             self._ls.pop(ix)
-        self.onremove(self, entityremoveeventargs(e))
+
+        if self.eventson:
+            self.onremove(self, entityremoveeventargs(e))
         return e
 
     def reversed(self):
@@ -212,7 +215,8 @@ class entities(object):
     def insertbefore(self, ix, e):
         self._ls.insert(ix, e)
         try:
-            self.onadd(self, entityaddeventargs(e))
+            if self.eventson:
+                self.onadd(self, entityaddeventargs(e))
         except AttributeError as ex:
             msg = str(ex)
             msg += '\n' + 'Ensure the superclass\'s __init__ is called.'
@@ -240,8 +244,14 @@ class entities(object):
         self.insert(dstix, e)
 
     def has(self, e):
-        return self.indexes['identity'](e).ispopulated
-
+        if self.eventson:
+            return self.indexes['identity'](e).ispopulated
+        else:
+            for e1 in self:
+                if e is e1:
+                    return True
+            return False
+            
     def hasnt(self, e):
         return not self.has(e)
 
