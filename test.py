@@ -73,10 +73,10 @@ class sillyknights(knights):
         return ks
 
 class knight(entity):
-    def __init__(self, name):
+    def __init__(self, name, eventson=True):
         self.name = name
         self._trait = None
-        super().__init__()
+        super().__init__(eventson=eventson)
 
     @property
     def trait(self):
