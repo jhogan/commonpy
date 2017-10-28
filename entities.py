@@ -540,7 +540,8 @@ class entity():
                 self.onaftervaluechange(self, eargs)
 
     def add(self, e):
-        es = entities()
+        eventson = self.eventson or e.eventson
+        es = entities(eventson=eventson)
         es += self
         es += e
         return es
