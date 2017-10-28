@@ -28,7 +28,7 @@ import sys
 class entities(object):
     def __init__(self, initial=None, eventson=True):
         self._ls = []
-        self.eventson = eventson
+        self._eventson = eventson
 
         # The event and indexes classes are subtypes of entites. Don't add
         # events and indexes to these types in order to avoid infinite
@@ -51,6 +51,10 @@ class entities(object):
         # Append initial collection
         if initial != None:
             self.append(initial)
+    @property
+    def eventson(self):
+        # TODO Add Unit Test
+        return self._eventson
 
     def _self_onadd(self, src, eargs):
         for ix in self.indexes:
