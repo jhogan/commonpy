@@ -378,11 +378,12 @@ class entities(object):
         items  =  item  if  hasattr(item,  '__iter__')  else  [item]
         es     =  e     if  hasattr(e,     '__iter__')  else  [e]
             
-        for item in items:
-            self.onadd(self, entityaddeventargs(item))
+        if self.eventson:
+            for item in items:
+                self.onadd(self, entityaddeventargs(item))
 
-        for e in es:
-            self.onremove(self, entityremoveeventargs(e))
+            for e in es:
+                self.onremove(self, entityremoveeventargs(e))
 
     def __getitem__(self, key):
         if type(key) == int or type(key) == slice:
