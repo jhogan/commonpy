@@ -887,17 +887,19 @@ class test_entities(tester):
 
         # Create a new collection based on the old one by instantiating with
         # the old collection as an argument. 
-        sks1 = knights(sks)
-        self.assertEq(sks1.count, sks.count)
-        for i, k in enumerate(sks1):
-            self.assertIs(k, sks1[i])
+        for eventson in (True, False):
+            sks1 = knights(sks, eventson=eventson)
+            self.assertEq(sks1.count, sks.count)
+            for i, k in enumerate(sks1):
+                self.assertIs(k, sks1[i])
 
         # Create a new collection based on the old one by instantiating with
         # a list of entity objects from the old collection.
-        sks1 = knights(list(sks))
-        self.assertEq(sks1.count, sks.count)
-        for i, k in enumerate(sks1):
-            self.assertIs(k, sks1[i])
+        for eventson in (True, False):
+            sks1 = knights(list(sks), eventson=eventson)
+            self.assertEq(sks1.count, sks.count)
+            for i, k in enumerate(sks1):
+                self.assertIs(k, sks1[i])
             
     def it_calls__iadd__(self):
         """ The += operator (__iadd__) wraps the append method. It can 
@@ -905,31 +907,33 @@ class test_entities(tester):
         Also, there is no way to determine what has been added. """
 
         ## Test appending one entity ##
-        ks = knights.createthe4()
-        ni = knight('knight who says ni')
-        ks += ni
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ni = knight('knight who says ni')
+            ks += ni
 
-        self.assertEq(5, ks.count)
-        self.assertIs(ks.last, ni)
+            self.assertEq(5, ks.count)
+            self.assertIs(ks.last, ni)
 
         ## Test appending an entities collection to an entities collection.
-        ks = knights.createthe4()
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            nis = knight('knight 1') + knight('knight 2')
+            ks += nis
 
-        nis = knight('knight 1') + knight('knight 2')
-        ks += nis
-
-        self.assertEq(6,           ks.count)
-        self.assertIs(nis.first,   ks.penultimate)
-        self.assertIs(nis.second,  ks.last)
+            self.assertEq(6,           ks.count)
+            self.assertIs(nis.first,   ks.penultimate)
+            self.assertIs(nis.second,  ks.last)
 
         ## Ensure we get a ValueError if we append something that isn't
         ## an entity, entities type.
-        ks = knights.createthe4()
-        try:
-            ks += 1
-            self.assertFail('Append accepted invalid type')
-        except Exception as ex:
-            self.assertEq(ValueError, type(ex))
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            try:
+                ks += 1
+                self.assertFail('Append accepted invalid type')
+            except Exception as ex:
+                self.assertEq(ValueError, type(ex))
 
     def it_calls__iand__(self):
         """ The &= opreator (__iand__) wraps the append() methed setting
@@ -937,54 +941,59 @@ class test_entities(tester):
         objecs won't be appended if already exist in the collection."""
 
         ## Test appending one unique entity ##
-        ks = knights.createthe4()
-        ni = knight('knight who says ni')
-        ks &= ni
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ni = knight('knight who says ni')
+            ks &= ni
 
-        self.assertEq(5, ks.count)
-        self.assertIs(ks.last, ni)
+            self.assertEq(5, ks.count)
+            self.assertIs(ks.last, ni)
 
         # Test appending one non-unique entity. Nothing should sucessfully
         # be appended.
 
-        ks = knights.createthe4()
-        ks &= ks.first
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ks &= ks.first
 
-        self.assertEq(4, ks.count)
+            self.assertEq(4, ks.count)
 
         # Test appending an entities collection to an entities collection
         # where one of the entities being appended is not unique.
 
-        ks = knights.createthe4()
-        nis = knights()
-        nis += knight('knight who says ni 1')
-        nis += ks.first # The non-unique entity
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            nis = knights()
+            nis += knight('knight who says ni 1')
+            nis += ks.first # The non-unique entity
 
-        ks &= nis
+            ks &= nis
 
-        self.assertEq(5, ks.count)
-        self.assertIs(nis.first,   ks.last)
+            self.assertEq(5, ks.count)
+            self.assertIs(nis.first,   ks.last)
 
         # Test appending an entities collection to an entities collection
         # where both of the entities being appended are not unique.
         # Nothing will be sucessfully appended
-        ks = knights.createthe4()
-        nis = knights()
-        nis += ks.first
-        nis += ks.second # The non-unique entity
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            nis = knights()
+            nis += ks.first
+            nis += ks.second # The non-unique entity
 
-        ks &= nis
+            ks &= nis
 
-        self.assertEq(4, ks.count)
+            self.assertEq(4, ks.count)
 
         ## Ensure we get a ValueError if we append something that isn't
         ## an entity or entities type
-        ks = knights.createthe4()
-        try:
-            ks &= 1
-            self.assertFail('Append accepted invalid type')
-        except Exception as ex:
-            self.assertEq(ValueError, type(ex))
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            try:
+                ks &= 1
+                self.assertFail('Append accepted invalid type')
+            except Exception as ex:
+                self.assertEq(ValueError, type(ex))
 
     def it_calls__add__(self):
         """ The + operator adds an entity object, or a collection of 
@@ -992,29 +1001,32 @@ class test_entities(tester):
         a new entities collection of the same type. """
 
         # Add a single entity to the collection
-        ks = knights.createthe4()
-        ni = knight('knight who says ni 1')
-        ks1 = ks + ni
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ni = knight('knight who says ni 1')
+            ks1 = ks + ni
 
-        self.assertEq(4, ks.count)
-        self.assertEq(5, ks1.count)
-        self.assertEq(knights, type(ks1))
-        self.assertIs(ks1.last, ni)
+            self.assertEq(4, ks.count)
+            self.assertEq(5, ks1.count)
+            self.assertEq(knights, type(ks1))
+            self.assertIs(ks1.last, ni)
 
         # Add an entities collection to ks
 
-        ks = knights.createthe4()
-        nis = knights()
-        nis += knight('knight who says ni 1')
-        nis += knight('knight who says ni 2')
+        for eventson1 in (True, False):
+            ks = knights.createthe4(eventson=eventson1)
+            for eventson2 in (True, False):
+                nis = knights(eventson=eventson2)
+                nis += knight('knight who says ni 1')
+                nis += knight('knight who says ni 2')
 
-        ks1 = ks + nis
+                ks1 = ks + nis
 
-        self.assertEq(4,                ks.count)
-        self.assertEq(6,                ks1.count)
-        self.assertEq(knights,          type(ks1))
-        self.assertIs(ks1.penultimate,  nis.first)
-        self.assertIs(ks1.last,         nis.last)
+                self.assertEq(4,                ks.count)
+                self.assertEq(6,                ks1.count)
+                self.assertEq(knights,          type(ks1))
+                self.assertIs(ks1.penultimate,  nis.first)
+                self.assertIs(ks1.last,         nis.last)
 
     def it_calls__sub__(self):
         """ The - operator removes an entity object, or a collection of 
@@ -1022,138 +1034,150 @@ class test_entities(tester):
         a new entities collection of the same type. """
 
         # Remove a single entity from the collection
-        ks = knights.createthe4()
-        rst = ks.first
-        ks1 = ks - rst
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            rst = ks.first
+            ks1 = ks - rst
 
-        self.assertEq(4, ks.count)
-        self.assertEq(3, ks1.count)
-        self.assertEq(knights, type(ks1))
-        self.assertFalse(ks1.has(rst))
-        self.assertTrue(ks.has(rst))
+            self.assertEq(4, ks.count)
+            self.assertEq(3, ks1.count)
+            self.assertEq(knights, type(ks1))
+            self.assertFalse(ks1.has(rst))
+            self.assertTrue(ks.has(rst))
 
         # Remove an entities collection from ks
 
-        ks = knights.createthe4()
-        es = knights(ks[:2])
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            es = knights(ks[:2])
 
-        ks1 = ks - es
+            ks1 = ks - es
 
-        self.assertEq(4,           ks.count)
-        self.assertEq(2,           ks1.count)
-        self.assertEq(knights,     type(ks1))
-        self.assertIs(ks1.first,   ks.third)
-        self.assertIs(ks1.second,  ks.fourth)
+            self.assertEq(4,           ks.count)
+            self.assertEq(2,           ks1.count)
+            self.assertEq(knights,     type(ks1))
+            self.assertIs(ks1.first,   ks.third)
+            self.assertIs(ks1.second,  ks.fourth)
 
     def it_gets__ls(self):
-        """ The _list property is a 'private' property representing
+        """ The _ls property is a 'private' property representing
         the underlying Python list object used to store the entities."""
-        ks = knights.createthe4()
+        
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
 
-        for i, k in enumerate(ks):
-            self.assertIs(ks._ls[i], k)
+            for i, k in enumerate(ks):
+                self.assertIs(ks._ls[i], k)
 
     def it_gets_count(self):
         """ The count property is the number of entities in the collection.
         The __len__, isempty, hasone, and ispopulated methods are based on the
         count property so they will tested here.  """
-        ks = knights.createthe4()
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
 
-        self.assertEq(4, ks.count)
-        self.assertEq(4, len(ks))
-        self.assertFalse(ks.isempty)
-        self.assertFalse(ks.hasone)
-        self.assertTrue(ks.ispopulated)
+            self.assertEq(4, ks.count)
+            self.assertEq(4, len(ks))
+            self.assertFalse(ks.isempty)
+            self.assertFalse(ks.hasone)
+            self.assertTrue(ks.ispopulated)
 
         # Create a collection of one
-        ks = knights(ks.first) 
-        self.assertEq(1, ks.count)
-        self.assertEq(1, len(ks))
-        self.assertFalse(ks.isempty)
-        self.assertTrue(ks.hasone)
-        self.assertTrue(ks.ispopulated)
+        rst = ks.first
+        for eventson in (True, False):
+            ks = knights(rst, eventson=eventson) 
+            self.assertEq(1, ks.count)
+            self.assertEq(1, len(ks))
+            self.assertFalse(ks.isempty)
+            self.assertTrue(ks.hasone)
+            self.assertTrue(ks.ispopulated)
 
-        # Clear the collection so it will have no entities
-        ks.clear()
+            # Clear the collection so it will have no entities
+            ks.clear()
 
-        self.assertEq(0, ks.count)
-        self.assertEq(0, len(ks))
-        self.assertTrue(ks.isempty)
-        self.assertFalse(ks.hasone)
-        self.assertFalse(ks.ispopulated)
+            self.assertEq(0, ks.count)
+            self.assertEq(0, len(ks))
+            self.assertTrue(ks.isempty)
+            self.assertFalse(ks.hasone)
+            self.assertFalse(ks.ispopulated)
 
     def it_calls__str__(self):
         """ The __str__ method will return a concatenation of the results
         of each entities __str__ invocation followed by a line ending."""
 
-        ks = knights.createthe4()
-        hdr = '{} object at {} count: {}\n' \
-            .format(str(type(ks)), str(hex(id(ks))), ks.count)
-        s = hdr + """    Lancelot
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            hdr = '{} object at {} count: {}\n' \
+                .format(str(type(ks)), str(hex(id(ks))), ks.count)
+            s = hdr + """    Lancelot
     Authur
     Galahad
     Bedevere
 """
-        self.assertEq(s, str(ks))
+            self.assertEq(s, str(ks))
 
-        ks.clear()
+            ks.clear()
 
-        hdr = '{} object at {} count: {}\n' \
-            .format(str(type(ks)), str(hex(id(ks))), ks.count)
+            hdr = '{} object at {} count: {}\n' \
+                .format(str(type(ks)), str(hex(id(ks))), ks.count)
 
-        self.assertEq(hdr, str(ks))
+            self.assertEq(hdr, str(ks))
 
     def it_calls__repr__(self):
         """ The __repr__ method will return a concatenation of the results
         of each entities __repr__ invocation followed by a line ending."""
 
-        ks = knights.createthe4()
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
 
-        for i, l in enumerate(repr(ks).splitlines()):
-            if i == 0:
-                continue
-            l = l.strip()
-            self.assertEq(l, repr(ks[i-1]))
+            for i, l in enumerate(repr(ks).splitlines()):
+                if i == 0:
+                    continue
+                l = l.strip()
+                self.assertEq(l, repr(ks[i-1]))
 
-        ks.clear()
+            ks.clear()
 
-        r = '{} object at {} count: {}\n' \
-            .format(str(type(ks)), str(hex(id(ks))), ks.count)
+            r = '{} object at {} count: {}\n' \
+                .format(str(type(ks)), str(hex(id(ks))), ks.count)
 
-        self.assertEq(r, repr(ks))
+            self.assertEq(r, repr(ks))
 
     def it_calls__setitem__(self):
         """ The __setitem__ method is used to set an item in the 
         collection by an index."""
 
-        ks = knights.createthe4()
-        ni = knight('knight who says ni 1')
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ni = knight('knight who says ni 1')
 
-        # Set the second element to ni
-        ks[1] = ni
+            # Set the second element to ni
+            ks[1] = ni
 
-        self.assertEq(4, ks.count)
-        self.assertIs(ni, ks.second)
+            self.assertEq(4, ks.count)
+            self.assertIs(ni, ks.second)
 
-        ks = knights.createthe4()
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
 
-        nis = knights()
-        nis += knight('knight who says ni 1')
-        nis += knight('knight who says ni 1')
+            nis = knights()
+            nis += knight('knight who says ni 1')
+            nis += knight('knight who says ni 1')
 
-        # Set the third and forth elements to nis[0] and nis[1] 
-        ks[2:4] = nis
-        
-        self.assertEq(4, ks.count)
-        self.assertIs(nis.first, ks.third)
-        self.assertIs(nis.second, ks.fourth)
+            # Set the third and forth elements to nis[0] and nis[1] 
+            ks[2:4] = nis
+            
+            self.assertEq(4, ks.count)
+            self.assertIs(nis.first, ks.third)
+            self.assertIs(nis.second, ks.fourth)
 
-        # Assighn nis[0] and nis[1] to ks[0] and ks[2]
-        ks = knights.createthe4()
-        ks[::2] = nis
-        self.assertEq(4, ks.count)
-        self.assertIs(nis.first, ks.first)
-        self.assertIs(nis.second, ks.third)
+        # Assign nis[0] and nis[1] to ks[0] and ks[2]
+        for eventson in (True, False):
+            ks = knights.createthe4(eventson=eventson)
+            ks[::2] = nis
+            self.assertEq(4, ks.count)
+            self.assertIs(nis.first, ks.first)
+            self.assertIs(nis.second, ks.third)
 
         # Ensure that setting an entity to an index that doesn't exist causes
         # an error.
@@ -1168,123 +1192,128 @@ class test_entities(tester):
     def it_calls__getitems__(self):
         """ The __getitem__ method is used to get an item in the 
         collection by an index."""
-        ks = knights()
-        ni = knight('knight who says ni 1')
-        ks += ni
+        for eventson in (True, False):
+            ks = knights(eventson=eventson)
+            ni = knight('knight who says ni 1')
+            ks += ni
 
-        # Test getting a single element
-        self.assertIs(ks[0], ni)
+            # Test getting a single element
+            self.assertIs(ks[0], ni)
 
-        ni1 = knight('knight who says ni 2')
-        ks += ni1
+            ni1 = knight('knight who says ni 2')
+            ks += ni1
 
-        # Test getting two elements
-        self.assertIs(ks[0], ni)
-        self.assertIs(ks[1], ni1)
+            # Test getting two elements
+            self.assertIs(ks[0], ni)
+            self.assertIs(ks[1], ni1)
 
-        # Test getting by a slice
-        ni, ni1 = ks[:2]
-        self.assertIs(ks[0], ni)
-        self.assertIs(ks[1], ni1)
+            # Test getting by a slice
+            ni, ni1 = ks[:2]
+            self.assertIs(ks[0], ni)
+            self.assertIs(ks[1], ni1)
 
         # Test getting using a stride
-        ks = knights().createthe4()
-        k, k3 = ks[::2]
-        self.assertIs(k, ks.first)
-        self.assertIs(k3, ks.third)
+        for eventson in (True, False):
+            ks = knights().createthe4(eventson=eventson)
+            k, k3 = ks[::2]
+            self.assertIs(k, ks.first)
+            self.assertIs(k3, ks.third)
     
     def it_calls_getindex(self):
         """ The getindex method returns the 0-based index/position of
         the given element within the collection. """
 
-        ks = knights().createthe4()
-        for i, k in enumerate(ks):
-            self.assertEq(i, ks.getindex(k))
 
-        try:
-            ks.getindex(knight(''))
-            self.assertFail('getindex should have raised a ValueError.')
-        except ValueError:
-            pass
-        except Exception as ex:
-            self.assertFail('getindex should have raised a ValueError.')
+        for eventson in (True, False):
+            ks = knights().createthe4(eventson=eventson)
+            for i, k in enumerate(ks):
+                self.assertEq(i, ks.getindex(k))
+
+            try:
+                ks.getindex(knight(''))
+                self.assertFail('getindex should have raised a ValueError.')
+            except ValueError:
+                pass
+            except Exception as ex:
+                self.assertFail('getindex should have raised a ValueError.')
 
     def it_gets_the_ordinals(self):
         """ The "ordinals" are propreties like "first", "second", and
         "last"."""
 
-        ks = knights().createthe4()
-        self.assertIs(ks[0], ks.first)
-        self.assertIs(ks[1], ks.second)
-        self.assertIs(ks[2], ks.third)
-        self.assertIs(ks[3], ks.fourth)
-        self.assertIs(ks[3], ks.last)
-        self.assertIs(ks[3], ks.ultimate)
-        self.assertIs(ks[2], ks.penultimate)
-        self.assertIs(ks[1], ks.antepenultimate)
-        self.assertIs(ks[0], ks.preantepenultimate)
+        for eventson in (True, False):
+            ks = knights().createthe4(eventson=eventson)
+            self.assertIs(ks[0], ks.first)
+            self.assertIs(ks[1], ks.second)
+            self.assertIs(ks[2], ks.third)
+            self.assertIs(ks[3], ks.fourth)
+            self.assertIs(ks[3], ks.last)
+            self.assertIs(ks[3], ks.ultimate)
+            self.assertIs(ks[2], ks.penultimate)
+            self.assertIs(ks[1], ks.antepenultimate)
+            self.assertIs(ks[0], ks.preantepenultimate)
 
-        # Ordinals should return None if the the value doesn't exist
-        self.assertNone(ks.fifth)
-        self.assertNone(ks.sixth)
+            # Ordinals should return None if the the value doesn't exist
+            self.assertNone(ks.fifth)
+            self.assertNone(ks.sixth)
 
-        # All ordinals should return None if the collection is empty
-        ks.clear()
-        self.assertNone(ks.first)
-        self.assertNone(ks.second)
-        self.assertNone(ks.third)
-        self.assertNone(ks.fourth)
-        self.assertNone(ks.last)
-        self.assertNone(ks.ultimate)
-        self.assertNone(ks.penultimate)
-        self.assertNone(ks.antepenultimate)
-        self.assertNone(ks.preantepenultimate)
+            # All ordinals should return None if the collection is empty
+            ks.clear()
+            self.assertNone(ks.first)
+            self.assertNone(ks.second)
+            self.assertNone(ks.third)
+            self.assertNone(ks.fourth)
+            self.assertNone(ks.last)
+            self.assertNone(ks.ultimate)
+            self.assertNone(ks.penultimate)
+            self.assertNone(ks.antepenultimate)
+            self.assertNone(ks.preantepenultimate)
 
-        # Ensure ordinals return sensible results with a collection of 1
-        ni = knight('knight who says ni 1')
-        ks += ni
-        self.assertIs(ni, ks.first)
-        self.assertIs(ni, ks.last)
-        self.assertIs(ni, ks.ultimate)
-        self.assertNone(ks.second)
-        self.assertNone(ks.third)
-        self.assertNone(ks.fourth)
-        self.assertNone(ks.penultimate)
-        self.assertNone(ks.antepenultimate)
-        self.assertNone(ks.preantepenultimate)
+            # Ensure ordinals return sensible results with a collection of 1
+            ni = knight('knight who says ni 1')
+            ks += ni
+            self.assertIs(ni, ks.first)
+            self.assertIs(ni, ks.last)
+            self.assertIs(ni, ks.ultimate)
+            self.assertNone(ks.second)
+            self.assertNone(ks.third)
+            self.assertNone(ks.fourth)
+            self.assertNone(ks.penultimate)
+            self.assertNone(ks.antepenultimate)
+            self.assertNone(ks.preantepenultimate)
 
-        # Ensure ordinals return sensible results with a collection of 2
-        ni1 = knight('knight who says ni 2')
-        ks += ni1
-        self.assertIs(ni, ks.first)
-        self.assertIs(ni1, ks.second)
-        self.assertIs(ni1, ks.last)
-        self.assertIs(ni1, ks.ultimate)
-        self.assertIs(ni, ks.penultimate)
-        self.assertNone(ks.third)
-        self.assertNone(ks.fourth)
-        self.assertNone(ks.antepenultimate)
-        self.assertNone(ks.preantepenultimate)
+            # Ensure ordinals return sensible results with a collection of 2
+            ni1 = knight('knight who says ni 2')
+            ks += ni1
+            self.assertIs(ni, ks.first)
+            self.assertIs(ni1, ks.second)
+            self.assertIs(ni1, ks.last)
+            self.assertIs(ni1, ks.ultimate)
+            self.assertIs(ni, ks.penultimate)
+            self.assertNone(ks.third)
+            self.assertNone(ks.fourth)
+            self.assertNone(ks.antepenultimate)
+            self.assertNone(ks.preantepenultimate)
 
-        # Ensure ordinals return sensible results with a collection of 3
-        ni2= knight('knight who says ni 2')
-        ks += ni2
-        self.assertIs(ni, ks.first)
-        self.assertIs(ni1, ks.second)
-        self.assertIs(ni2, ks.third)
-        self.assertIs(ni2, ks.last)
-        self.assertIs(ni2, ks.ultimate)
-        self.assertIs(ni1, ks.penultimate)
-        self.assertIs(ni, ks.antepenultimate)
-        self.assertNone(ks.fourth)
+            # Ensure ordinals return sensible results with a collection of 3
+            ni2= knight('knight who says ni 2')
+            ks += ni2
+            self.assertIs(ni, ks.first)
+            self.assertIs(ni1, ks.second)
+            self.assertIs(ni2, ks.third)
+            self.assertIs(ni2, ks.last)
+            self.assertIs(ni2, ks.ultimate)
+            self.assertIs(ni1, ks.penultimate)
+            self.assertIs(ni, ks.antepenultimate)
+            self.assertNone(ks.fourth)
 
-        # Test that fifth and sixth return
-        ks = knights.createthe4()
-        ni5= knight('knight who says ni 5')
-        ni6= knight('knight who says ni 6')
-        ks += ni5 + ni6
-        self.assertIs(ni5, ks.fifth)
-        self.assertIs(ni6, ks.sixth)
+            # Test that fifth and sixth return
+            ks = knights.createthe4(eventson=eventson)
+            ni5= knight('knight who says ni 5')
+            ni6= knight('knight who says ni 6')
+            ks += ni5 + ni6
+            self.assertIs(ni5, ks.fifth)
+            self.assertIs(ni6, ks.sixth)
 
     def it_gets_brokenrules(self):
 
@@ -1295,37 +1324,38 @@ class test_entities(tester):
 
         # Ensure that the default knights collection is valid, i.e., its 
         # brokenrules collectios is empty
-        ks = knights.createthe4()
-        self.assertTrue(ks.isvalid)
-        self.assertValid(ks)
-        self.assertTrue(ks.brokenrules.isempty)
+        for eventson in (True, False):
+            ks = knights().createthe4(eventson=eventson)
+            self.assertTrue(ks.isvalid)
+            self.assertValid(ks)
+            self.assertTrue(ks.brokenrules.isempty)
 
-        # Break one of the knights broken rules
-        ks.first.name = 123
-        self.assertFalse(ks.isvalid)
-        self.assertInValid(ks)
-        self.assertTrue(ks.brokenrules.hasone)
-        self.assertEq(ks.brokenrules.first.message, 'Names must be strings')
-        self.assertEq(str(ks.brokenrules.first), 'Names must be strings')
+            # Break one of the knights broken rules
+            ks.first.name = 123
+            self.assertFalse(ks.isvalid)
+            self.assertInValid(ks)
+            self.assertTrue(ks.brokenrules.hasone)
+            self.assertEq(ks.brokenrules.first.message, 'Names must be strings')
+            self.assertEq(str(ks.brokenrules.first), 'Names must be strings')
 
-        # Break all of the knights broken rules and test each entity's 
-        # broken rules collection individually
-        for k in ks:
-            k.name = 123
-            self.assertFalse(k.isvalid)
-            self.assertInValid(k)
-            self.assertTrue(k.brokenrules.hasone)
-            self.assertEq(k.brokenrules.first.message, 'Names must be strings')
-            self.assertEq(str(k.brokenrules.first), 'Names must be strings')
+            # Break all of the knights broken rules and test each entity's 
+            # broken rules collection individually
+            for k in ks:
+                k.name = 123
+                self.assertFalse(k.isvalid)
+                self.assertInValid(k)
+                self.assertTrue(k.brokenrules.hasone)
+                self.assertEq(k.brokenrules.first.message, 'Names must be strings')
+                self.assertEq(str(k.brokenrules.first), 'Names must be strings')
 
-        # Now test the knigts collection's broken rules.
-        self.assertFalse(ks.isvalid)
-        self.assertInValid(ks)
-        self.assertTrue(4, ks.brokenrules.count)
+            # Now test the knigts collection's broken rules.
+            self.assertFalse(ks.isvalid)
+            self.assertInValid(ks)
+            self.assertTrue(4, ks.brokenrules.count)
 
-        for br in ks.brokenrules:
-            self.assertEq(br.message, 'Names must be strings')
-            self.assertEq(str(br), 'Names must be strings')
+            for br in ks.brokenrules:
+                self.assertEq(br.message, 'Names must be strings')
+                self.assertEq(str(br), 'Names must be strings')
 
     def it_raises_onadd(self):
         """ The onappended event is called whenever an entity is added to the
@@ -1804,28 +1834,37 @@ class test_entity(tester):
         entity or enities collection and returns an enities
         collection containing the concatenation."""
 
-        # Concatenate 2 knights into an entities collection of knights.
-        ni = knight('knight who says ni 1')
-        ni1 = knight('knight who says ni 2')
+        for eventson in (True, False):
+            for eventson1 in (True, False):
+                # Concatenate 2 knights into an entities collection of knights.
+                ni = knight('knight who says ni 1', eventson=eventson)
+                ni1 = knight('knight who says ni 2', eventson=eventson1)
 
-        ks = ni + ni1
+                print((eventson, eventson1))
 
-        self.assertEq(entities, type(ks))
-        self.assertEq(2, ks.count)
-        self.assertIs(ks.first, ni)
-        self.assertIs(ks.second, ni1)
+                ks = ni + ni1
 
-        # Now contatenate an entities collection to an entity
-        
-        the4 = knights.createthe4()
-        ks = ni + the4
-        self.assertEq(entities,   type(ks))
-        self.assertEq(5,          ks.count)
-        self.assertIs(ks.first,   ni)
-        self.assertIs(ks.second,  the4.first)
-        self.assertIs(ks.third,   the4.second)
-        self.assertIs(ks.fourth,  the4.third)
-        self.assertIs(ks.fifth,   the4.fourth)
+                self.assertEq(ks.eventson, eventson or eventson1)
+                # TODO When an entities object is created by concatenation, ensure ks.events =
+                # (ni.eventson or ni.eventson)
+
+                self.assertEq(entities, type(ks))
+                self.assertEq(2, ks.count)
+                self.assertIs(ks.first, ni)
+                self.assertIs(ks.second, ni1)
+
+                # Now contatenate an entities collection to an entity
+                
+                the4 = knights.createthe4()
+                ks = ni + the4
+                self.assertEq(ks.eventson, eventson or the4.eventson)
+                self.assertEq(entities,   type(ks))
+                self.assertEq(5,          ks.count)
+                self.assertIs(ks.first,   ni)
+                self.assertIs(ks.second,  the4.first)
+                self.assertIs(ks.third,   the4.second)
+                self.assertIs(ks.fourth,  the4.third)
+                self.assertIs(ks.fifth,   the4.fourth)
 
     def it_gets_brokenrules(self):
         """ This functionality is tested in
