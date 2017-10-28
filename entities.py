@@ -516,9 +516,15 @@ class entities(object):
 
 class entity():
     def __init__(self, eventson=True):
+        self._eventson = eventson
         if eventson:
             self.onbeforevaluechange = event()
             self.onaftervaluechange = event()
+
+    @property
+    def eventson(self):
+        # TODO Add Unit Test
+        return self._eventson
 
     def _setvalue(self, field, new, prop):
         old = getattr(self, field)
