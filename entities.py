@@ -273,6 +273,8 @@ class entities(object):
         if isinstance(obj, entity):
             t = obj
 
+        # TODO OPT We could use a try/except here instead of hasattr to improve
+        # performance
         elif hasattr(obj, '__iter__'):
             for t in obj:
                 if uniq:

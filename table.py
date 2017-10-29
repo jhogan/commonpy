@@ -25,12 +25,14 @@ SOFTWARE.
 from entities import *
 
 class table(entity):
-    def __init__(self, x=None, y=None, initval=None):
+    def __init__(self, x=None, y=None, initval=None, eventson=True):
+        self._eventson = eventson
         self.rows = rows(tbl=self)
         self._fields = fields()
 
-        self.rows.onfieldadd += self._fields_onadd
-        self.rows.onfieldremove += self._fields_onremove
+        if eventson:
+            self.rows.onfieldadd += self._fields_onadd
+            self.rows.onfieldremove += self._fields_onremove
 
         # If we have y, we can initialize the table using y, x and initval
         if y != None:
@@ -39,6 +41,9 @@ class table(entity):
                 r = self.newrow()
                 for _ in range(x):
                     r.newfield(initval)
+    @property
+    def eventson(self):
+        return self._eventson
 
     def _fields_onadd(self, src, eargs):
         f = eargs.entity
@@ -78,9 +83,8 @@ class table(entity):
         return self[y][x]
 
     def newrow(self):
-        r = row()
+        r = row(rows=self.rows)
         self.rows += r
-        r.rows = self.rows
         return r
 
     @property
@@ -228,12 +232,18 @@ class column(entity):
         
 class rows(entities):
     def __init__(self, initial=None, tbl=None):
-        super().__init__(initial=initial)
         self.table = tbl
-
+        super().__init__(initial=initial, eventson=self.eventson)
+        
         # Events
-        self.onfieldadd = event()
-        self.onfieldremove = event()
+        if self.eventson:
+            self.onfieldadd = event()
+            self.onfieldremove = event()
+    
+    @property
+    def eventson(self):
+        tbl = self.table
+        return tbl.eventson if tbl else True
 
     def _self_onremove(self, src, eargs):
         """ Whenever a row is removed from a rows collection, ensure that all
@@ -244,12 +254,23 @@ class rows(entities):
         eargs.entity.fields.clear()
 
 class row(entity):
-    def __init__(self):
-        super().__init__()
-        self.fields = fields(row=self)
+    def __init__(self, rows):
+        self.rows = rows
+        super().__init__(eventson=self.eventson)
+        self.fields = fields(r=self)
 
-        self.fields.onadd += self._fields_onadd
-        self.fields.onremove += self._fields_onremove
+        if self.eventson:
+            self.fields.onadd += self._fields_onadd
+            self.fields.onremove += self._fields_onremove
+
+    @property
+    def eventson(self):
+        rs = self.rows
+        # DEBUG
+        rs.eventson
+        # END DEBUG
+
+        return rs.eventson if rs else True
 
     def _fields_onadd(self, src, eargs):
         self.rows.onfieldadd(src, eargs)
@@ -290,9 +311,8 @@ class row(entity):
         return self.rows(ix + 1)
 
     def newfield(self, v):
-        f, fs = field(v), self.fields
-        fs += f
-        f.fields = fs
+        f = field(v, self.fields)
+        self.fields += f
         return f
 
     def newfields(self, *vs):
@@ -300,21 +320,24 @@ class row(entity):
             self.newfield(v)
 
 class fields(entities):
-    def __init__(self, initial=None, row=None):
+    def __init__(self, initial=None, r=None, eventson=None):
 
-        # Create index on the type of value
-        self.indexes += index(name='type', keyfn=lambda f: type(f.value))
+        self.row = r
+        self._eventson = eventson
 
-        # Create index on the value
-        self.indexes += index(name='value', keyfn=lambda f: f.value)
+        if self.eventson:
+            # Create index on the type of value
+            self.indexes += index(name='type', keyfn=lambda f: type(f.value))
 
-        if row:
-            self.row = row
+            # Create index on the value
+            self.indexes += index(name='value', keyfn=lambda f: f.value)
 
         # Ensure that each element in 'initial' is a field object. If not,
         # append a new field object using the element as the field's value.
+        # TODO OPT This could be optimized if fs were a list
         if initial != None:
-            fs = fields()
+            B()
+            fs = fields(eventson=False)
             for v in initial:
                 if isinstance(v, field):
                     fs += v
@@ -323,7 +346,19 @@ class fields(entities):
 
             initial = fs
             
-        super().__init__(initial=initial)
+        super().__init__(initial=initial, eventson=self.eventson)
+
+    @property
+    def eventson(self):
+        if self._eventson == True:
+            return True
+        elif self._eventson == False:
+            return False
+        elif self._eventson == None:
+            if self.row:
+                self.row.eventson
+            else:
+                return True
 
     @property
     def table(self):
@@ -334,9 +369,14 @@ class fields(entities):
         return [x.value for x in self]
 
 class field(entity):
-    def __init__(self, v):
-        super().__init__()
+    def __init__(self, v, fs=None):
+        self.fields = fs
+        super().__init__(eventson=self.eventson)
         self._v = v
+
+    @property
+    def eventson(self):
+        return self.fields.eventson if self.fields else True
 
     @property
     def value(self):

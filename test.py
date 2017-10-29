@@ -120,10 +120,15 @@ class constant(entity):
     def __init__(self, v):
         self.value = v
 
-def createtable(x, y):
-    tbl = table()
+def createtable(x, y, eventson=True):
+    tbl = table(eventson=eventson)
     for i in range(y):
+
         r = tbl.newrow()
+        ## DEBUG
+        r.eventson
+        ## End Debug
+
         for j in range(x):
             r.newfield([i, j])
     return tbl
@@ -1909,51 +1914,57 @@ class test_table(tester):
 
         # Instatiate a table with 10 rows and 20 columns. All the fields'
         # values should be None
-        tbl = table(x=10, y=20)
+        for eventson in (True, False):
+            tbl = table(x=10, y=20, eventson=eventson)
 
-        self.assertEq(20, tbl.rows.count)
-        self.assertEq(10, tbl.columns.count)
-        self.assertEq(10, tbl.rows.first.fields.count)
-        for r in tbl:
-            for f in r:
-                self.assertNone(f.value)
+            self.assertEq(20, tbl.rows.count)
+            self.assertEq(10, tbl.columns.count)
+            self.assertEq(10, tbl.rows.first.fields.count)
+            for r in tbl:
+                for f in r:
+                    self.assertNone(f.value)
         
 
         # Instatiate a table with 10 rows and 20 columns. All the fields'
         # values should be the knight set by the initval argument.
-        k = knights.createthe4().first
-        tbl = table(x=10, y=20, initval=k)
+        for eventson in (True, False):
+            k = knights.createthe4().first
+            tbl = table(x=10, y=20, initval=k, eventson=eventson)
 
-        self.assertEq(20, tbl.rows.count)
-        self.assertEq(10, tbl.columns.count)
-        self.assertEq(10, tbl.rows.first.fields.count)
-        for r in tbl:
-            for f in r:
-                self.assertIs(k, f.value)
+            self.assertEq(20, tbl.rows.count)
+            self.assertEq(10, tbl.columns.count)
+            self.assertEq(10, tbl.rows.first.fields.count)
+            for r in tbl:
+                for f in r:
+                    self.assertIs(k, f.value)
 
     def it_calls__iter__(self):
-        tbl = createtable(5, 5)
-        for r in tbl:
-            self.assertEq(row, type(r))
-            self.assertEq(5, r.fields.count)
+        for eventson in (True, False):
+            tbl = createtable(5, 5, eventson=eventson)
+            for r in tbl:
+                self.assertEq(row, type(r))
+                self.assertEq(5, r.fields.count)
 
     def it_calls__getitem__(self):
-        tbl = createtable(5, 5)
-        for i in range(5):
-            self.assertEq(row, type(tbl[i]))
+        for eventson in (True, False):
+            tbl = createtable(5, 5, eventson=eventson)
+            for i in range(5):
+                self.assertEq(row, type(tbl[i]))
 
     def it_calls__call__(self):
-        tbl = createtable(5, 5)
-        for i in range(5):
-            for j in range(5):
-                self.assertEq([i, j], tbl(i, j).value)
+        for eventson in (True, False):
+            tbl = createtable(5, 5, eventson=eventson)
+            for i in range(5):
+                for j in range(5):
+                    self.assertEq([i, j], tbl(i, j).value)
 
     def it_calls_newrow(self):
         # Ensure newrow creates a row in the table and returns it
-        tbl = table()
-        r = tbl.newrow()
-        self.assertEq(1, tbl.rows.count)
-        self.assertIs(tbl.rows.first, r)
+        for eventson in (True, False):
+            tbl = table(eventson=eventson)
+            r = tbl.newrow()
+            self.assertEq(1, tbl.rows.count)
+            self.assertIs(tbl.rows.first, r)
 
     def it_gets_columns(self):
         tbl = createtable(5, 5)
@@ -1965,7 +1976,7 @@ class test_table(tester):
                 self.assertEq([j, i], f.value)
 
     def it_gets_fields(self):
-        """ The table.fields proprety contains all the fields in the table.
+        """ The table.fields property contains all the fields in the table.
 
         The normal hierarchy of a table structure is:
 
@@ -1982,7 +1993,7 @@ class test_table(tester):
         happening in the subordinate objects of the table object.  So, for
         testing, these means we need to ensure that, no matter how a field is
         added or removed from a table, these addition or removal needs to be
-        reflected in the table.fields proprety. Note, however, that the
+        reflected in the table.fields property. Note, however, that the
         table.fields property itself is meant to be read-only (for the most
         part) so additions or removals to table.fields itself should not make
         any changes to the table object (because 'fields' is a vector and
@@ -2035,7 +2046,7 @@ class test_table(tester):
         self.assertEq(5 * 5, fs.count)
 
 
-        # Test fields proprety after setting them in the table object.
+        # Test fields property after setting them in the table object.
 
         # TODO  When setting fields, the old field(s) is removed from the
         # table.fields collection, but the new field(s) ends up at the end of
@@ -2043,7 +2054,7 @@ class test_table(tester):
         # field(s). This is because the fields.__setitem__ simply calls the
         # onadd the onremove event, which causes an append to the collection.
         # Ideally, the new field wouldn't be appended, but would rather be set
-        # in the correct location of the table.fields proprety. However,
+        # in the correct location of the table.fields property. However,
         # currently there is no use case for this. However, since this should
         # change, use of table.fields shouldn't make assuptions about where
         # newly set fields will appear until this behavior is corrected.
@@ -2141,7 +2152,7 @@ class test_table(tester):
 
         # When a fields value is update, the 'value' index that tbl.where
         # depends upon must be update in order for these by-value seeks to
-        # work. To test this, we simply set the 'value' proprety of the 'field'
+        # work. To test this, we simply set the 'value' property of the 'field'
         # object to an arbitray value and ensure that searching for that
         # arbitray value using where() still works.
         r.fields.first.value = 'ni ni ni'
@@ -2322,6 +2333,11 @@ class test_column(tester):
         for c in tbl.columns:
             self.assertEq(4, c.width)
 
+class test_rows(tester):
+    def it_calls__repr__(self):
+        # TODO This doesn't seem to be working at the momen
+        pass
+
 class test_row(tester):
     def it_calls__getitems__(self):
         """ The __getitem__ method returns the field at the given index
@@ -2405,7 +2421,7 @@ class test_fields(tester):
         self.assertIs(tbl, f.table)
 
     def it_get_values(self):
-        """ A fields collection value proprety will be a list of all the values
+        """ A fields collection value property will be a list of all the values
         in each of its field objects. """
         tbl = createtable(5, 5)
         for i, r in enumerate(tbl):
